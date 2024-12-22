@@ -72,6 +72,17 @@ class BeerClientMockTest {
     }
 
     @Test
+    void testBeerNotFound() {
+        server.expect(method(HttpMethod.DELETE))
+                .andExpect(requestToUriTemplate(URL + BeerClientImpl.GET_BEER_BY_ID_PATH, dto.getId()))
+                .andRespond(withResourceNotFound());
+
+        assertThrows(HttpClientErrorException.class, () -> beerClient.deleteBeer(dto.getId()));
+
+        server.verify();
+    }
+
+    @Test
     void testDeleteBeer() {
         server.expect(method(HttpMethod.DELETE))
                 .andExpect(requestToUriTemplate(URL + BeerClientImpl.GET_BEER_BY_ID_PATH, dto.getId()))
