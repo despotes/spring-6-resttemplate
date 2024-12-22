@@ -5,8 +5,12 @@ import guru.springframework.spring6resttemplate.model.BeerStyle;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.UUID;
+
 public interface BeerClient {
     Page<BeerDTO> listBeers();
 
     Page<BeerDTO> listBeers(String beerName, BeerStyle beerStyle, Boolean showInventory,  Integer pageNumber, Integer pageSize);
+
+    BeerDTO getBeerById(UUID beerId);
 }
