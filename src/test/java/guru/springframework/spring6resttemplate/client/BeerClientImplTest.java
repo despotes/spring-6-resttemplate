@@ -1,8 +1,10 @@
 package guru.springframework.spring6resttemplate.client;
 
+import guru.springframework.spring6resttemplate.model.BeerStyle;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.PageRequest;
 
 
 @SpringBootTest
@@ -12,12 +14,12 @@ class BeerClientImplTest {
     BeerClientImpl beerClient;
 
     @Test
-    void listBeersNoBeerName() {
-        beerClient.listBeers(null);
+    void listBeersWithBeerStyle() {
+        beerClient.listBeers("ALE", null, null, null, null);
     }
 
     @Test
-    void listBeers() {
-        beerClient.listBeers("ALE");
+    void listBeersNotBeerName() {
+        beerClient.listBeers();
     }
 }
