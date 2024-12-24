@@ -1,5 +1,6 @@
 package guru.springframework.spring6resttemplate.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
@@ -11,6 +12,8 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizeRequest;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -18,21 +21,22 @@ import java.util.Collections;
 
 import static java.util.Objects.isNull;
 
+@Component
 public class OAuthClientInterceptor implements ClientHttpRequestInterceptor {
     private final OAuth2AuthorizedClientManager manager;
-    private final Authentication authentication;
+    private final Authentication principal;
     private final ClientRegistration clientRegistration;
 
-    public OAuthClientInterceptor(OAuth2AuthorizedClientManager manager, Authentication authentication, ClientRegistration clientRegistration) {
+    public OAuthClientInterceptor(OAuth2AuthorizedClientManager manager, ClientRegistrationRepository clientRegistrationRepository) {
         this.manager = manager;
-        this.authentication = authentication;
-        this.clientRegistration = clientRegistration;
+        this.principal = createPrincipal();
+        this.clientRegistration = clientRegistrationRepository.findByRegistrationId("springauth");
     }
 
     @Override
     public ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
         OAuth2AuthorizeRequest oAuth2AuthorizeRequest = OAuth2AuthorizeRequest
-                .withClientRegistrationId(clientRegistration.getClientId())
+                .withClientRegistrationId(clientRegistration.getRegistrationId())
                 .principal(createPrincipal())
                 .build();
 
@@ -42,18 +46,13 @@ public class OAuthClientInterceptor implements ClientHttpRequestInterceptor {
             throw new IllegalStateException("Missing credentials");
         }
 
-        request.getHeaders().set(HttpHeaders.AUTHORIZATION, "Bearer " + client.getAccessToken());
+        request.getHeaders().set(HttpHeaders.AUTHORIZATION, "Bearer " + client.getAccessToken().getTokenValue());
 
         return execution.execute(request, body);
     }
 
     private Authentication createPrincipal() {
         return new Authentication() {
-            @Override
-            public String getName() {
-                return "";
-            }
-
             @Override
             public Collection<? extends GrantedAuthority> getAuthorities() {
                 return Collections.emptySet();
@@ -71,7 +70,7 @@ public class OAuthClientInterceptor implements ClientHttpRequestInterceptor {
 
             @Override
             public Object getPrincipal() {
-                return null;
+                return this;
             }
 
             @Override
@@ -81,7 +80,11 @@ public class OAuthClientInterceptor implements ClientHttpRequestInterceptor {
 
             @Override
             public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+            }
 
+            @Override
+            public String getName() {
+                return clientRegistration.getClientId();
             }
         };
     }

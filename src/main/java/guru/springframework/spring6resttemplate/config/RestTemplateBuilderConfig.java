@@ -15,17 +15,10 @@ public class RestTemplateBuilderConfig {
     @Value("${rest.template.rootUrl}")
     String rootUrl;
 
-    private final ClientRegistrationRepository clientRegistrationRepository;
-    private final OAuth2AuthorizedClientService authorizedClientService;
-
-    public RestTemplateBuilderConfig(ClientRegistrationRepository clientRegistrationRepository, OAuth2AuthorizedClientService authorizedClientService) {
-        this.clientRegistrationRepository = clientRegistrationRepository;
-        this.authorizedClientService = authorizedClientService;
-    }
-
     @Bean
-    OAuth2AuthorizedClientManager authorizedClientManager() throws Exception {
-        var authorizedClientProvider= OAuth2AuthorizedClientProviderBuilder.builder()
+    OAuth2AuthorizedClientManager authorizedClientManager(ClientRegistrationRepository clientRegistrationRepository,
+                                                          OAuth2AuthorizedClientService authorizedClientService) {
+        var authorizedClientProvider = OAuth2AuthorizedClientProviderBuilder.builder()
                 .clientCredentials()
                 .build();
 
@@ -35,9 +28,11 @@ public class RestTemplateBuilderConfig {
     }
 
     @Bean
-    public RestTemplateBuilder restTemplateBuilder(RestTemplateBuilderConfigurer configurer) {
+    public RestTemplateBuilder restTemplateBuilder(RestTemplateBuilderConfigurer configurer,
+                                                   OAuthClientInterceptor interceptor) {
         assert rootUrl != null;
         return configurer.configure(new RestTemplateBuilder())
+                .additionalInterceptors(interceptor)
                 .uriTemplateHandler(new DefaultUriBuilderFactory(rootUrl));
     }
 }
